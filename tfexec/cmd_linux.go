@@ -13,12 +13,15 @@ func (tf *Terraform) runTerraformCmd(ctx context.Context, cmd *exec.Cmd) error {
 	cmd.Stdout = mergeWriters(cmd.Stdout, tf.stdout)
 	cmd.Stderr = mergeWriters(cmd.Stderr, tf.stderr, &errBuf)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		// kill children if parent is dead
-		Pdeathsig: syscall.SIGKILL,
-		// set process group ID
-		Setpgid: true,
-	}
+	// This causes operation not permitted error when running in lambda
+	// It is fine to not kill the child process since we use locking
+	// and the lambda environment will eventually exit
+	// cmd.SysProcAttr = &syscall.SysProcAttr{
+	// 	// kill children if parent is dead
+	// 	Pdeathsig: syscall.SIGKILL,
+	// 	// set process group ID
+	// 	Setpgid: true,
+	// }
 
 	go func() {
 		<-ctx.Done()
